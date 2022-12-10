@@ -3,6 +3,8 @@ use crate::task::{block_current_and_run_next, current_process, current_task};
 use crate::timer::{add_timer, get_time_ms};
 use alloc::sync::Arc;
 
+use super::SYSERR_UNKNOWN;
+
 pub fn sys_sleep(ms: usize) -> isize {
     let expire_ms = get_time_ms() + ms;
     let task = current_task().unwrap();
@@ -138,6 +140,16 @@ pub fn sys_condvar_wait(condvar_id: usize, mutex_id: usize) -> isize {
 }
 
 // LAB5 YOUR JOB: Implement deadlock detection, but might not all in this syscall
-pub fn sys_enable_deadlock_detect(_enabled: usize) -> isize {
-    -1
+pub fn sys_enable_deadlock_detect(enabled: usize) -> isize {
+    let enabled = if enabled == 0 {
+        false
+    } else if enabled == 1 {
+        true
+    } else {
+        return SYSERR_UNKNOWN;
+    };
+    let process = current_process();
+    let mut inner = process.inner_exclusive_access();
+    inner.deadlock_detection = enabled;
+    0
 }

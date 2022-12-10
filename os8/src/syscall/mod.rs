@@ -46,6 +46,9 @@ const SYSCALL_CONDVAR_CREATE: usize = 471;
 const SYSCALL_CONDVAR_SIGNAL: usize = 472;
 const SYSCALL_CONDVAR_WAIT: usize = 473;
 
+const SYSERR_UNKNOWN: isize = -1;
+const SYSERR_DEADLOCK: isize = -0xDEAD;
+
 mod fs;
 pub mod process;
 mod sync;
