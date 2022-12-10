@@ -8,8 +8,6 @@ pub struct DeadlockDetector {
     pub available: Vec<SizeType>,
     pub allocation: Vec<Vec<SizeType>>,
     pub need: Vec<Vec<SizeType>>,
-    pub work: Vec<SizeType>,
-    pub finish: Vec<bool>,
 }
 
 impl DeadlockDetector {
@@ -18,8 +16,6 @@ impl DeadlockDetector {
             available: vec![],
             allocation: vec![vec![]],
             need: vec![vec![]],
-            work: vec![],
-            finish: vec![false],
         }
     }
 
@@ -33,7 +29,6 @@ impl DeadlockDetector {
 
     pub fn resize_update_res_cnt(&mut self, len: usize) {
         self.available.resize(len, 0);
-        self.work.resize(len, 0);
         for (allocat, nee) in self.allocation.iter_mut().zip(self.need.iter_mut()) {
             allocat.resize(len, 0);
             nee.resize(len, 0);
@@ -47,8 +42,6 @@ impl Default for DeadlockDetector {
             available: Default::default(),
             allocation: Default::default(),
             need: Default::default(),
-            work: Default::default(),
-            finish: Default::default(),
         }
     }
 }
