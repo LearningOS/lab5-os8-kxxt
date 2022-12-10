@@ -5,11 +5,11 @@ use u32 as SizeType;
 
 #[derive(Clone)]
 pub struct DeadlockDetector {
-    available: Vec<SizeType>,
-    allocation: Vec<Vec<SizeType>>,
-    need: Vec<Vec<SizeType>>,
-    work: Vec<SizeType>,
-    finish: Vec<bool>,
+    pub available: Vec<SizeType>,
+    pub allocation: Vec<Vec<SizeType>>,
+    pub need: Vec<Vec<SizeType>>,
+    pub work: Vec<SizeType>,
+    pub finish: Vec<bool>,
 }
 
 impl DeadlockDetector {
@@ -20,6 +20,23 @@ impl DeadlockDetector {
             need: vec![vec![]],
             work: vec![],
             finish: vec![false],
+        }
+    }
+
+    pub fn try_lock(&mut self, tid: usize, rid: usize) {}
+
+    pub fn resize_update_thread_cnt(&mut self, len: usize) {
+        let res_len = self.available.len();
+        self.allocation.resize(len, vec![0; res_len]);
+        self.need.resize(len, vec![0; res_len]);
+    }
+
+    pub fn resize_update_res_cnt(&mut self, len: usize) {
+        self.available.resize(len, 0);
+        self.work.resize(len, 0);
+        for (allocat, nee) in self.allocation.iter_mut().zip(self.need.iter_mut()) {
+            allocat.resize(len, 0);
+            nee.resize(len, 0);
         }
     }
 }
