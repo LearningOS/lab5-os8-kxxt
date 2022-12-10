@@ -1,3 +1,4 @@
+use super::deadlock_detection::DeadlockDetector;
 use super::id::RecycleAllocator;
 use super::{add_task, pid_alloc, PidHandle, TaskControlBlock};
 use crate::fs::{File, Stdin, Stdout};
@@ -31,6 +32,8 @@ pub struct ProcessControlBlockInner {
     pub semaphore_list: Vec<Option<Arc<Semaphore>>>,
     pub condvar_list: Vec<Option<Arc<Condvar>>>,
     pub deadlock_detection: bool,
+    pub mutex_deadlock_detector: DeadlockDetector,
+    pub semaphore_deadlock_detector: DeadlockDetector,
 }
 
 impl ProcessControlBlockInner {
@@ -99,6 +102,8 @@ impl ProcessControlBlock {
                     semaphore_list: Vec::new(),
                     condvar_list: Vec::new(),
                     deadlock_detection: false,
+                    mutex_deadlock_detector: DeadlockDetector::new(),
+                    semaphore_deadlock_detector: DeadlockDetector::new(),
                 })
             },
         });
@@ -220,7 +225,9 @@ impl ProcessControlBlock {
                     mutex_list: Vec::new(),
                     semaphore_list: Vec::new(),
                     condvar_list: Vec::new(),
-                    deadlock_detection: false,
+                    deadlock_detection: parent.deadlock_detection,
+                    mutex_deadlock_detector: parent.mutex_deadlock_detector.clone(),
+                    semaphore_deadlock_detector: parent.semaphore_deadlock_detector.clone(),
                 })
             },
         });
@@ -276,6 +283,8 @@ impl ProcessControlBlock {
                     semaphore_list: Vec::new(),
                     condvar_list: Vec::new(),
                     deadlock_detection: false,
+                    mutex_deadlock_detector: DeadlockDetector::new(),
+                    semaphore_deadlock_detector: DeadlockDetector::new(),
                 })
             },
         });

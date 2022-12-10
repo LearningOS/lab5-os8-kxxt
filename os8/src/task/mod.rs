@@ -19,6 +19,7 @@ pub mod stackless_coroutine;
 mod switch;
 #[allow(clippy::module_inception)]
 mod task;
+mod deadlock_detection;
 
 pub use crate::syscall::process::TaskInfo;
 use crate::{
@@ -106,7 +107,7 @@ pub fn exit_current_and_run_next(exit_code: i32) {
                 initproc_inner.children.push(child.clone());
             }
         }
-        let mut recycle_res = Vec::<TaskUserRes>::new();
+        // let mut recycle_res = Vec::<TaskUserRes>::new();
 
         // debug!("deallocate user res");
         // deallocate user res (including tid/trap_cx/ustack) of all threads
@@ -116,11 +117,11 @@ pub fn exit_current_and_run_next(exit_code: i32) {
             let task = task.as_ref().unwrap();
             let mut task_inner = task.inner_exclusive_access();
             if let Some(res) = task_inner.res.take() {
-                recycle_res.push(res);
+                drop(res);
             }
         }
         drop(process_inner);
-        recycle_res.clear();
+        // recycle_res.clear();
         let mut process_inner = process.inner_exclusive_access();
         // debug!("deallocate pcb res");
         process_inner.children.clear();
