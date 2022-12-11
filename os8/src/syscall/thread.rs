@@ -49,7 +49,6 @@ pub fn sys_thread_create(entry: usize, arg: usize) -> isize {
         .inner
         .exclusive_access()
         .resize_update_thread_cnt(process_inner.tasks.len());
-    // semaphore_deadlock_detector_inner;
     // add new task to scheduler
     add_task(Arc::clone(&new_task));
     new_task_tid as isize
