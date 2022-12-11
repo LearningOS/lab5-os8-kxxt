@@ -39,11 +39,17 @@ pub fn sys_thread_create(entry: usize, arg: usize) -> isize {
         tasks.push(None);
     }
     tasks[new_task_tid] = Some(Arc::clone(&new_task));
-    let mut detector_inner = process_inner
+    process_inner
         .mutex_deadlock_detector
         .inner
-        .exclusive_access();
-    detector_inner.resize_update_thread_cnt(process_inner.tasks.len());
+        .exclusive_access()
+        .resize_update_thread_cnt(process_inner.tasks.len());
+    process_inner
+        .semaphore_deadlock_detector
+        .inner
+        .exclusive_access()
+        .resize_update_thread_cnt(process_inner.tasks.len());
+    // semaphore_deadlock_detector_inner;
     // add new task to scheduler
     add_task(Arc::clone(&new_task));
     new_task_tid as isize
