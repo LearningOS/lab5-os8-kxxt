@@ -1,4 +1,4 @@
-use super::deadlock_detection::DeadlockDetector;
+use crate::sync::DeadlockDetector;
 use super::id::RecycleAllocator;
 use super::{add_task, pid_alloc, PidHandle, TaskControlBlock};
 use crate::fs::{File, Stdin, Stdout};

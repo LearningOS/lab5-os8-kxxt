@@ -19,7 +19,6 @@ pub mod stackless_coroutine;
 mod switch;
 #[allow(clippy::module_inception)]
 mod task;
-mod deadlock_detection;
 
 pub use crate::syscall::process::TaskInfo;
 use crate::{

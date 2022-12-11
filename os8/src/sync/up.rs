@@ -16,6 +16,14 @@ pub struct UPSafeCell<T> {
 
 unsafe impl<T> Sync for UPSafeCell<T> {}
 
+impl<T: Clone> Clone for UPSafeCell<T> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+        }
+    }
+}
+
 impl<T> UPSafeCell<T> {
     /// User is responsible to guarantee that inner struct is only used in
     /// uniprocessor.
