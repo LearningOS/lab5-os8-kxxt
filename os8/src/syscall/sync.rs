@@ -103,14 +103,7 @@ pub fn sys_mutex_lock(mutex_id: usize) -> isize {
 }
 
 pub fn sys_mutex_unlock(mutex_id: usize) -> isize {
-    let tid = current_task()
-        .as_ref()
-        .unwrap()
-        .inner_exclusive_access()
-        .res
-        .as_ref()
-        .unwrap()
-        .tid;
+    let tid = get_tid_unchecked(&current_task());
     let process = current_process();
     let process_inner = process.inner_exclusive_access();
     let mut detector_inner = process_inner
@@ -119,8 +112,7 @@ pub fn sys_mutex_unlock(mutex_id: usize) -> isize {
         .exclusive_access();
     let tidx = find_task_pos_by_tid(&process_inner.tasks, tid).unwrap();
     let mutex = Arc::clone(process_inner.mutex_list[mutex_id].as_ref().unwrap());
-    detector_inner.available[mutex_id] += 1;
-    detector_inner.allocation[tidx][mutex_id] -= 1;
+    detector_inner.free(tidx, mutex_id);
     drop(detector_inner);
     drop(process_inner);
     drop(process);

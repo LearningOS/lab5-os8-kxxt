@@ -85,5 +85,7 @@ impl DeadlockDetectorInner {
     }
 
     pub fn free(&mut self, tidx: usize, rid: usize) {
+        self.available[rid] += 1;
+        self.allocation[tidx][rid] -= 1;
     }
 }
