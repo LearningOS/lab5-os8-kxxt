@@ -12,7 +12,7 @@ pub struct DeadlockDetector {
     pub inner: UPSafeCell<DeadlockDetectorInner>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct DeadlockDetectorInner {
     pub available: Vec<SizeType>,
     pub allocation: Vec<Vec<SizeType>>,
@@ -31,8 +31,6 @@ impl DeadlockDetector {
             },
         }
     }
-
-    pub fn try_lock(&mut self, tid: usize, rid: usize) {}
 }
 
 impl DeadlockDetectorInner {
@@ -57,23 +55,47 @@ impl DeadlockDetectorInner {
         rid: usize,
     ) -> bool {
         self.need[tidx][rid] += 1;
+
         let mut work = self.available.clone();
         // Set finished tasks to true.
         let mut finish: Vec<_> = tasks.iter().map(|t| t.is_none()).collect();
+        debug!("begin self = {:?}, finish = {:?}", self, finish);
         loop {
-            let Some(idx) = (0..tasks.len())
-                .find(|&i| finish[i] == false && self.need[i][rid] <= work[rid])
-            else {
+            let mut found = false;
+            'outer: for i in 0..tasks.len() {
+                // for all unfinished tasks
+                if finish[i] {
+                    // to make the borrow checker happy.
+                    // I didn't use .filter(|&x| finish[x] == false)
+                    continue;
+                }
+                // check it!
+                for r in 0..self.available.len() {
+                    if self.need[i][r] > work[r] {
+                        // Not a valid thread/task
+                        continue 'outer;
+                    }
+                }
+                for r in 0..self.available.len() {
+                    work[r] += self.allocation[i][r];
+                }
+                finish[i] = true;
+                found = true;
+            }
+            if !found {
                 break;
-            };
-            work[rid] += self.allocation[idx][rid];
-            finish[idx] = true;
+            }
         }
+        debug!(
+            "end self = {:?}, finish = {:?}, work = {:?}",
+            self, finish, work
+        );
         if finish.iter().any(|&x| x == false) {
             // Rollback changes
             self.need[tidx][rid] -= 1;
             false
         } else {
+            debug!("LGTM");
             true
         }
     }

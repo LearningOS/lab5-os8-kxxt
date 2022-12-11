@@ -78,11 +78,8 @@ pub fn sys_mutex_lock(mutex_id: usize) -> isize {
         .mutex_deadlock_detector
         .inner
         .exclusive_access();
-    debug!("Task {tid} trying to lock {mutex_id}");
+    // debug!("Task {tid} trying to lock {mutex_id}");
     let tidx = find_task_pos_by_tid(tasks, tid).unwrap();
-    // let need_size1 = detector_inner.need.len();
-    // let need_size2 = detector_inner.need[0].len();
-    // debug!("tidx = {tidx}, mutex_id = {mutex_id}, shape: {need_size1}x{need_size2}");
     if process_inner.deadlock_detection && !detector_inner.request(tasks, tidx, mutex_id) {
         // Dead Lock!
         error!("Deadlock detected!");
@@ -138,13 +135,30 @@ pub fn sys_semaphore_create(res_count: usize) -> isize {
             .push(Some(Arc::new(Semaphore::new(res_count))));
         process_inner.semaphore_list.len() - 1
     };
+    let len = process_inner.semaphore_list.len();
+    let mut detector_inner = process_inner
+        .semaphore_deadlock_detector
+        .inner
+        .exclusive_access();
+    detector_inner.resize_update_res_cnt(len);
+    detector_inner.available[id] = res_count as u32;
+    debug!("Semaphore {id} with {res_count} resources is created!");
     id as isize
 }
 
 pub fn sys_semaphore_up(sem_id: usize) -> isize {
+    let tid = get_tid_unchecked(&current_task());
     let process = current_process();
     let process_inner = process.inner_exclusive_access();
+    let tidx = find_task_pos_by_tid(&process_inner.tasks, tid).unwrap();
+    let mut detector_inner = process_inner
+        .semaphore_deadlock_detector
+        .inner
+        .exclusive_access();
     let sem = Arc::clone(process_inner.semaphore_list[sem_id].as_ref().unwrap());
+    detector_inner.free(tidx, sem_id);
+    debug!("Task {tid} up semaphore {sem_id}.");
+    drop(detector_inner);
     drop(process_inner);
     sem.up();
     0
@@ -152,11 +166,35 @@ pub fn sys_semaphore_up(sem_id: usize) -> isize {
 
 // LAB5 HINT: Return -0xDEAD if deadlock is detected
 pub fn sys_semaphore_down(sem_id: usize) -> isize {
+    let tid = get_tid_unchecked(&current_task());
     let process = current_process();
     let process_inner = process.inner_exclusive_access();
+    let tidx = find_task_pos_by_tid(&process_inner.tasks, tid).unwrap();
+    let mut detector_inner = process_inner
+        .semaphore_deadlock_detector
+        .inner
+        .exclusive_access();
+    debug!("det inner = {detector_inner:?}");
+    debug!("Task {tid} trying to down semaphore {sem_id}!");
+    if process_inner.deadlock_detection
+        && !detector_inner.request(&process_inner.tasks, tidx, sem_id)
+    {
+        // Dead Lock!
+        error!("Deadlock detected!");
+        return SYSERR_DEADLOCK;
+    }
     let sem = Arc::clone(process_inner.semaphore_list[sem_id].as_ref().unwrap());
+    drop(detector_inner);
     drop(process_inner);
     sem.down();
+    debug!("Task {tid} successfully downed semaphore {sem_id}!");
+    let process = current_process();
+    let process_inner = process.inner_exclusive_access();
+    let mut detector_inner = process_inner
+        .semaphore_deadlock_detector
+        .inner
+        .exclusive_access();
+    detector_inner.allocate(tidx, sem_id);
     0
 }
 
