@@ -43,7 +43,7 @@ pub fn sys_mutex_create(blocking: bool) -> isize {
         .inner
         .exclusive_access();
     detector_inner.resize_update_res_cnt(len);
-    detector_inner.available[id] = 1;
+    detector_inner.init_res(id, 1);
     id as isize
 }
 
@@ -141,7 +141,7 @@ pub fn sys_semaphore_create(res_count: usize) -> isize {
         .inner
         .exclusive_access();
     detector_inner.resize_update_res_cnt(len);
-    detector_inner.available[id] = res_count as u32;
+    detector_inner.init_res(id, res_count as u32);
     debug!("Semaphore {id} with {res_count} resources is created!");
     id as isize
 }

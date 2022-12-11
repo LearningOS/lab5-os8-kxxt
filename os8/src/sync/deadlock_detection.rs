@@ -14,9 +14,9 @@ pub struct DeadlockDetector {
 
 #[derive(Clone, Debug)]
 pub struct DeadlockDetectorInner {
-    pub available: Vec<SizeType>,
-    pub allocation: Vec<Vec<SizeType>>,
-    pub need: Vec<Vec<SizeType>>,
+    available: Vec<SizeType>,
+    allocation: Vec<Vec<SizeType>>,
+    need: Vec<Vec<SizeType>>,
 }
 
 impl DeadlockDetector {
@@ -34,6 +34,11 @@ impl DeadlockDetector {
 }
 
 impl DeadlockDetectorInner {
+    pub fn init_res(&mut self, rid: usize, cnt: u32) {
+        assert!(self.available[rid] == 0);
+        self.available[rid] = cnt;
+    }
+
     pub fn resize_update_thread_cnt(&mut self, len: usize) {
         let res_len = self.available.len();
         self.allocation.resize(len, vec![0; res_len]);
