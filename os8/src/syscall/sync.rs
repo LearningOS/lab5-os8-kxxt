@@ -40,8 +40,7 @@ pub fn sys_mutex_create(blocking: bool) -> isize {
     let len = process_inner.mutex_list.len();
     let mut detector_inner = process_inner
         .mutex_deadlock_detector
-        .inner
-        .exclusive_access();
+        .inner_exclusive_access();
     detector_inner.resize_update_res_cnt(len);
     detector_inner.init_res(id, 1);
     id as isize
@@ -76,8 +75,7 @@ pub fn sys_mutex_lock(mutex_id: usize) -> isize {
     let tasks = &process_inner.tasks;
     let mut detector_inner = process_inner
         .mutex_deadlock_detector
-        .inner
-        .exclusive_access();
+        .inner_exclusive_access();
     // debug!("Task {tid} trying to lock {mutex_id}");
     let tidx = find_task_pos_by_tid(tasks, tid).unwrap();
     if process_inner.deadlock_detection && !detector_inner.request(tasks, tidx, mutex_id) {
@@ -93,8 +91,7 @@ pub fn sys_mutex_lock(mutex_id: usize) -> isize {
     let process_inner = process.inner_exclusive_access();
     let mut detector_inner = process_inner
         .mutex_deadlock_detector
-        .inner
-        .exclusive_access();
+        .inner_exclusive_access();
     detector_inner.allocate(tidx, mutex_id);
     0
 }
@@ -105,8 +102,7 @@ pub fn sys_mutex_unlock(mutex_id: usize) -> isize {
     let process_inner = process.inner_exclusive_access();
     let mut detector_inner = process_inner
         .mutex_deadlock_detector
-        .inner
-        .exclusive_access();
+        .inner_exclusive_access();
     let tidx = find_task_pos_by_tid(&process_inner.tasks, tid).unwrap();
     let mutex = Arc::clone(process_inner.mutex_list[mutex_id].as_ref().unwrap());
     detector_inner.free(tidx, mutex_id);
@@ -138,8 +134,7 @@ pub fn sys_semaphore_create(res_count: usize) -> isize {
     let len = process_inner.semaphore_list.len();
     let mut detector_inner = process_inner
         .semaphore_deadlock_detector
-        .inner
-        .exclusive_access();
+        .inner_exclusive_access();
     detector_inner.resize_update_res_cnt(len);
     detector_inner.init_res(id, res_count as u32);
     debug!("Semaphore {id} with {res_count} resources is created!");
@@ -153,8 +148,7 @@ pub fn sys_semaphore_up(sem_id: usize) -> isize {
     let tidx = find_task_pos_by_tid(&process_inner.tasks, tid).unwrap();
     let mut detector_inner = process_inner
         .semaphore_deadlock_detector
-        .inner
-        .exclusive_access();
+        .inner_exclusive_access();
     let sem = Arc::clone(process_inner.semaphore_list[sem_id].as_ref().unwrap());
     detector_inner.free(tidx, sem_id);
     debug!("Task {tid} up semaphore {sem_id}.");
@@ -172,8 +166,7 @@ pub fn sys_semaphore_down(sem_id: usize) -> isize {
     let tidx = find_task_pos_by_tid(&process_inner.tasks, tid).unwrap();
     let mut detector_inner = process_inner
         .semaphore_deadlock_detector
-        .inner
-        .exclusive_access();
+        .inner_exclusive_access();
     debug!("det inner = {detector_inner:?}");
     debug!("Task {tid} trying to down semaphore {sem_id}!");
     if process_inner.deadlock_detection
@@ -192,8 +185,7 @@ pub fn sys_semaphore_down(sem_id: usize) -> isize {
     let process_inner = process.inner_exclusive_access();
     let mut detector_inner = process_inner
         .semaphore_deadlock_detector
-        .inner
-        .exclusive_access();
+        .inner_exclusive_access();
     detector_inner.allocate(tidx, sem_id);
     0
 }
@@ -240,14 +232,12 @@ pub fn sys_condvar_wait(condvar_id: usize, mutex_id: usize) -> isize {
 
 // LAB5 YOUR JOB: Implement deadlock detection, but might not all in this syscall
 pub fn sys_enable_deadlock_detect(enabled: usize) -> isize {
-    let task = current_task();
-    let tid = get_tid_unchecked(&task);
     let pid = current_process().pid.0;
     let enabled = if enabled == 0 {
-        debug!("DEADLOCK detection disabled for task {tid} of process {pid}!");
+        debug!("DEADLOCK detection disabled for process {pid}!");
         false
     } else if enabled == 1 {
-        debug!("DEADLOCK detection enabled for task {tid} of process {pid}!");
+        debug!("DEADLOCK detection enabled for process {pid}!");
         true
     } else {
         return SYSERR_UNKNOWN;

@@ -1,3 +1,5 @@
+use core::cell::RefMut;
+
 use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
@@ -9,7 +11,7 @@ use crate::task::TaskControlBlock;
 
 #[derive(Clone)]
 pub struct DeadlockDetector {
-    pub inner: UPSafeCell<DeadlockDetectorInner>,
+    inner: UPSafeCell<DeadlockDetectorInner>,
 }
 
 #[derive(Clone, Debug)]
@@ -30,6 +32,10 @@ impl DeadlockDetector {
                 })
             },
         }
+    }
+
+    pub fn inner_exclusive_access(&self) -> RefMut<DeadlockDetectorInner> {
+        self.inner.exclusive_access()
     }
 }
 
